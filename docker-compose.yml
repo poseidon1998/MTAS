@@ -1,0 +1,65 @@
+version: '3'
+
+services:
+
+  db:
+    image: postgres:13
+    container_name: db
+    environment:
+      POSTGRES_DB: SS_V1
+      POSTGRES_USER: ssuser
+      POSTGRES_PASSWORD: Admin@123
+    ports:
+      - "5400:5432"
+    restart: always
+    volumes:
+      - ./db_config/postgres_data:/var/lib/postgresql/data
+
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5410:80"
+    restart: always
+    depends_on:
+      - db
+
+
+  mtas_web:  
+    container_name: mtas_web
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:            
+      - ./apps/django:/MTAS/apps/django
+    ports: 
+      - "${DOCKER_IP}:7000:8000"
+      - "${DOCKER_IP}:70:80"
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://mtas:Admin@123:5400/MTAS_V1
+
+  neo4j:
+      image: neo4j:5.22.0
+      container_name: neo4j
+      ports:
+        - "71:7687"
+        - "72:7474"
+      restart: always
+      environment:
+        NEO4J_AUTH: none
+      volumes:
+        - ./db_config/neo4j_data:/data
+        - ./db_config/neo4j_logs:/logs
+        - ./db_config/neo4j_import:/import
+volumes:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  postgres_data:
